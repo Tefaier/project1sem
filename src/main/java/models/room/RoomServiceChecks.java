@@ -30,4 +30,9 @@ public class RoomServiceChecks implements RoomService {
   public Room addBooking(long id, Booking booking) {
     return null;
   }
+
+  @Override
+  public Room removeBooking(long id, Booking booking) {
+    return null;
+  }
 }

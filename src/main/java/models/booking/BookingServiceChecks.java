@@ -3,6 +3,8 @@ package models.booking;
 import exceptions.OverlapException;
 import exceptions.ValidationException;
 import models.room.RoomRepository;
+import models.room.RoomService;
+import models.user.UserService;
 import records.BookingDTO;
 
 import java.time.LocalDateTime;
@@ -16,7 +18,7 @@ public class BookingServiceChecks implements BookingService{
   }
 
   @Override
-  public Booking tryAdd(BookingDTO bookingDTO) throws OverlapException, ValidationException {
+  public Booking tryAdd(BookingDTO bookingDTO, RoomService roomService, UserService userService) throws ValidationException {
     return null;
   }
 
@@ -33,5 +35,10 @@ public class BookingServiceChecks implements BookingService{
   @Override
   public Set<Booking> getBookings(Set<Long> ids, LocalDateTime from, LocalDateTime to) {
     return null;
+  }
+
+  @Override
+  public void deleteBooking(Booking booking, RoomService roomService, UserService userService) {
+
   }
 }

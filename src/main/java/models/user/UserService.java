@@ -11,4 +11,5 @@ public interface UserService {
   public boolean hasUser (UserDTO userDTO);
   public User getUser (long id);
   public User addBooking (long id, Booking booking);
+  public User removeBooking (long id, Booking booking);
 }

@@ -12,4 +12,5 @@ public interface RoomService {
   public boolean hasRoom (RoomDTO roomDTO);
   public Room getRoom (long id);
   public Room addBooking (long id, Booking booking);
+  public Room removeBooking (long id, Booking booking);
 }

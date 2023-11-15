@@ -29,4 +29,9 @@ public class UserServiceChecks implements UserService {
   public User addBooking(long id, Booking booking) {
     return null;
   }
+
+  @Override
+  public User removeBooking(long id, Booking booking) {
+    return null;
+  }
 }
