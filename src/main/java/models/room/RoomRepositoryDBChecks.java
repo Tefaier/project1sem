@@ -1,8 +1,11 @@
 package models.room;
 
+import exceptions.OverlapException;
 import records.RoomDTO;
 
-public class RoomRepositoryDB implements RoomRepository {
+import java.util.Set;
+
+public class RoomRepositoryDBChecks implements RoomRepository {
   @Override
   public Room getRoom(String name) {
     return null;
@@ -14,12 +17,17 @@ public class RoomRepositoryDB implements RoomRepository {
   }
 
   @Override
-  public Room addRoom(RoomDTO roomDTO) {
+  public Room addRoom(RoomDTO roomDTO) throws OverlapException {
     return null;
   }
 
   @Override
   public Room editRoom(Room from, Room to) {
+    return null;
+  }
+
+  @Override
+  public Set<Room> getAllRooms() {
     return null;
   }
 }
