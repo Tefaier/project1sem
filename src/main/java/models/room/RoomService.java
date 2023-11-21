@@ -11,6 +11,4 @@ public interface RoomService {
   public Room tryAdd (RoomDTO roomDTO) throws OverlapException, ValidationException;
   public boolean hasRoom (RoomDTO roomDTO);
   public Room getRoom (long id);
-  public Room addBooking (long id, Booking booking);
-  public Room removeBooking (long id, Booking booking);
 }

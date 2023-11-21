@@ -9,6 +9,7 @@ import records.BookingDTO;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class BookingServiceChecks implements BookingService{
   private final BookingRepository bookingRepository;
@@ -18,27 +19,41 @@ public class BookingServiceChecks implements BookingService{
   }
 
   @Override
-  public Booking tryAdd(BookingDTO bookingDTO, RoomService roomService, UserService userService) throws ValidationException {
-    return null;
+  public Booking tryAdd(BookingDTO bookingDTO) throws ValidationException {
+    if (!hasBooking(bookingDTO)) {
+      return bookingRepository.addBooking(bookingDTO);
+    } else {
+      throw new ValidationException("Booking couldn't be added", "");
+    }
   }
 
   @Override
   public boolean hasBooking(BookingDTO bookingDTO) {
-    return false;
+    return getBookingsByUser(bookingDTO.userID(), bookingDTO.from(), bookingDTO.to()).isEmpty() &&
+        getBookingsByRoom(bookingDTO.roomID(), bookingDTO.from(), bookingDTO.to()).isEmpty();
   }
 
   @Override
   public Booking getBooking(long id) {
-    return null;
+    return bookingRepository.getBooking(id);
   }
 
   @Override
-  public Set<Booking> getBookings(Set<Long> ids, LocalDateTime from, LocalDateTime to) {
-    return null;
+  public Set<Booking> getBookingsByUser(Long userID, LocalDateTime from, LocalDateTime to) {
+    return bookingRepository.getBookingsByUser(userID)
+        .stream().filter(booking -> !booking.overlapsWithPeriod(from, to))
+        .collect(Collectors.toSet());
   }
 
   @Override
-  public void deleteBooking(Booking booking, RoomService roomService, UserService userService) {
+  public Set<Booking> getBookingsByRoom(Long roomID, LocalDateTime from, LocalDateTime to) {
+    return bookingRepository.getBookingsByRoom(roomID)
+        .stream().filter(booking -> !booking.overlapsWithPeriod(from, to))
+        .collect(Collectors.toSet());
+  }
 
+  @Override
+  public void deleteBooking(Booking booking) {
+    bookingRepository.deleteBooking(booking);
   }
 }

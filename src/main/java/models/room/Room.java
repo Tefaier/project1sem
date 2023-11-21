@@ -1,17 +1,19 @@
 package models.room;
 
-import models.booking.Booking;
+import models.booking.BookingService;
 
-import java.util.Set;
+import java.time.LocalDateTime;
 
 public class Room {
   public final long id;
   public final String name;
-  public final Set<Long> bookingIds;
 
-  public Room(long id, String name, Set<Long> bookingIds) {
+  public Room(long id, String name) {
     this.id = id;
     this.name = name;
-    this.bookingIds = bookingIds;
+  }
+
+  public boolean isFreeAtPeriod(LocalDateTime periodStart, LocalDateTime periodFinish, BookingService bookingService) {
+    return bookingService.getBookingsByRoom(id, periodStart, periodFinish).isEmpty();
   }
 }

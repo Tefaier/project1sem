@@ -1,5 +1,6 @@
 package models.user;
 
+import exceptions.OverlapException;
 import models.booking.Booking;
 import records.UserDTO;
 
@@ -12,26 +13,20 @@ public class UserServiceChecks implements UserService {
 
   @Override
   public User tryAdd(UserDTO userDTO) {
-    return null;
+    if (!hasUser(userDTO)) {
+      return userRepository.addUser(userDTO);
+    } else {
+      throw new OverlapException("User with such name already exists", "name", userDTO.name());
+    }
   }
 
   @Override
   public boolean hasUser(UserDTO userDTO) {
-    return false;
+    return userRepository.getUser(userDTO.name()) == null;
   }
 
   @Override
   public User getUser(long id) {
-    return null;
-  }
-
-  @Override
-  public User addBooking(long id, Booking booking) {
-    return null;
-  }
-
-  @Override
-  public User removeBooking(long id, Booking booking) {
-    return null;
+    return userRepository.getUser(id);
   }
 }

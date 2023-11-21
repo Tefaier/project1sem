@@ -13,26 +13,20 @@ public class RoomServiceChecks implements RoomService {
 
   @Override
   public Room tryAdd(RoomDTO roomDTO) throws OverlapException {
-    return null;
+    if (!hasRoom(roomDTO)) {
+      return roomRepository.addRoom(roomDTO);
+    } else {
+      throw new OverlapException("Room with such name already exists", "name", roomDTO.name());
+    }
   }
 
   @Override
   public boolean hasRoom(RoomDTO roomDTO) {
-    return false;
+    return roomRepository.getRoom(roomDTO.name()) == null;
   }
 
   @Override
   public Room getRoom(long id) {
-    return null;
-  }
-
-  @Override
-  public Room addBooking(long id, Booking booking) {
-    return null;
-  }
-
-  @Override
-  public Room removeBooking(long id, Booking booking) {
-    return null;
+    return roomRepository.getRoom(id);
   }
 }

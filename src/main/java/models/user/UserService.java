@@ -10,6 +10,4 @@ public interface UserService {
   public User tryAdd (UserDTO userDTO) throws OverlapException, ValidationException;
   public boolean hasUser (UserDTO userDTO);
   public User getUser (long id);
-  public User addBooking (long id, Booking booking);
-  public User removeBooking (long id, Booking booking);
 }
