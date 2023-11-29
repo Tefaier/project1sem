@@ -9,6 +9,7 @@ import records.RoomDTO;
 import java.sql.Connection;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -62,7 +63,6 @@ public class RoomRepositoryDBChecks implements RoomRepository {
   @Override
   public Room addRoom(RoomDTO roomDTO) throws OverlapException {
     return jdbi.inTransaction((Handle handle) -> {
-      // add checks
       var result = handle.createUpdate("INSERT INTO room (name, restricts, time_from, time_to) VALUES (:name, :restricts, :time_from, :time_to);")
           .bind("name", roomDTO.name())
           .bind("restricts", !roomDTO.noCheck())
@@ -79,11 +79,34 @@ public class RoomRepositoryDBChecks implements RoomRepository {
 
   @Override
   public Room editRoom(Room from, RoomDTO to) {
-    return null;
+    jdbi.useTransaction((Handle handle) -> {
+      handle.createUpdate("UPDATE room SET " +
+              "name = :name, " +
+              "restricts = :restricts, " +
+              "time_from = :time_from " +
+              "time_to = :time_to " +
+              "WHERE room_id = :id")
+          .bind("name", to.name())
+          .bind("restricts", !to.noCheck())
+          .bind("time_from", to.from())
+          .bind("time_to", to.to())
+          .execute();
+    });
+    return getRoom(from.id).get();
   }
 
   @Override
-  public Set<Room> getAllRooms() {
-    return null;
+  public List<Room> getAllRooms() {
+    return jdbi.inTransaction((Handle handle) -> {
+      // add checks
+      var result = handle.createQuery("SELECT * FROM room")
+          .mapToMap().list();
+      return result.stream().map(map -> new Room(
+          (long) map.get("room_id"),
+          (String) map.get("name"),
+          (boolean) map.get("restricts"),
+          (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_from")).toLocalTime() : null,
+          (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null)).toList();
+    });
   }
 }
