@@ -8,6 +8,9 @@ public record RoomDTO(LocalTime from, LocalTime to, Boolean noCheck, String name
     if (!noCheck) {
       Objects.requireNonNull(from);
       Objects.requireNonNull(to);
+      if (from.isAfter(to)) {
+        throw new IllegalArgumentException("Time from can't be after time to");
+      }
     }
     Objects.requireNonNull(name);
   }

@@ -1,18 +1,28 @@
 package models.user;
 
 import exceptions.OverlapException;
+import org.jdbi.v3.core.Jdbi;
 import records.UserDTO;
 
+import java.sql.Connection;
+import java.util.Optional;
 import java.util.Set;
 
+// user is named account in db
 public class UserRepositoryDBChecks implements UserRepository {
+  private final Jdbi jdbi;
+
+  public UserRepositoryDBChecks(Jdbi jdbi) {
+    this.jdbi = jdbi;
+  }
+
   @Override
-  public User getUser(String name) {
+  public Optional<User> getUser(String name) {
     return null;
   }
 
   @Override
-  public User getUser(Long id) {
+  public Optional<User> getUser(Long id) {
     return null;
   }
 
@@ -22,7 +32,7 @@ public class UserRepositoryDBChecks implements UserRepository {
   }
 
   @Override
-  public User editUser(User from, User to) {
+  public User editUser(User from, UserDTO to) {
     return null;
   }
 

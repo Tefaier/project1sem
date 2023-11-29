@@ -4,12 +4,13 @@ import exceptions.OverlapException;
 import models.user.User;
 import records.UserDTO;
 
+import java.util.Optional;
 import java.util.Set;
 
 public interface UserRepository {
-  public User getUser(String name);
-  public User getUser(Long id);
+  public Optional<User> getUser(String name);
+  public Optional<User> getUser(Long id);
   public User addUser(UserDTO userDTO) throws OverlapException;
-  public User editUser(User from, User to);
+  public User editUser(User from, UserDTO to);
   public Set<User> getAllUsers();
 }

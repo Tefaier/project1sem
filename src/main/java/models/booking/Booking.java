@@ -4,12 +4,14 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 public class Booking {
+  public final long id;
   public final LocalDateTime timeFrom;
   public final LocalDateTime timeTo;
   public final long userId;
   public final long roomId;
 
-  public Booking(LocalDateTime timeFrom, LocalDateTime timeTo, long userId, long roomId) {
+  public Booking(long id, LocalDateTime timeFrom, LocalDateTime timeTo, long userId, long roomId) {
+    this.id = id;
     this.timeFrom = timeFrom;
     this.timeTo = timeTo;
     this.userId = userId;
