@@ -2,6 +2,9 @@ package models.booking;
 
 import exceptions.OverlapException;
 import exceptions.ValidationException;
+import models.room.RoomRepository;
+import models.user.User;
+import models.user.UserRepository;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import records.BookingDTO;
@@ -9,25 +12,44 @@ import records.BookingDTO;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class BookingRepositoryDBChecksPremium implements BookingRepository {
   public static TimeThreshold timeThreshold = TimeThreshold.byWeek;
 
+  private final RoomRepository roomRepository;
+  private final UserRepository userRepository;
   private final Jdbi jdbi;
+  private final Duration minimumTime;
   private final Duration usualLimit;
   private final Duration premiumLimit;
   private final int streakRequirement;
   private final Duration premiumThreshold;
+  private final TimeThreshold timeThresholdMethod;
+  private final Duration inFutureAvailability;
 
-  public BookingRepositoryDBChecksPremium(Jdbi jdbi, Duration usualLimit, Duration premiumLimit, int streakRequirement, Duration premiumThreshold, Duration inTheFutureLimit) {
+  public BookingRepositoryDBChecksPremium(RoomRepository roomRepository,
+                                          UserRepository userRepository,
+                                          Jdbi jdbi,
+                                          Duration minimumTime,
+                                          Duration usualLimit,
+                                          Duration premiumLimit,
+                                          int streakRequirement,
+                                          Duration premiumThreshold,
+                                          TimeThreshold timeThresholdMethod,
+                                          Duration inFutureAvailability) {
+    this.roomRepository = roomRepository;
+    this.userRepository = userRepository;
     this.jdbi = jdbi;
+    this.minimumTime = minimumTime;
     this.usualLimit = usualLimit;
     this.premiumLimit = premiumLimit;
     this.streakRequirement = streakRequirement;
     this.premiumThreshold = premiumThreshold;
+    this.timeThresholdMethod = timeThresholdMethod;
+    this.inFutureAvailability = inFutureAvailability;
   }
 
   @Override
@@ -55,11 +77,11 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
     return jdbi.inTransaction((Handle handle) -> {
       var result =
           handle.createQuery("SELECT * FROM booking WHERE account_id = :id " +
-                  "AND (:from is null OR time_from >= :from)" +
-                  "AND (:to is null OR time_to <= :to);")
+                  "AND (:from is null OR time_from >= :from OR time_to >= :from)" +
+                  "AND (:to is null OR time_from <= :to OR time_to <= :to);")
               .bind("id", id)
-              .bind("from", from)
-              .bind("to", to)
+              .bind("from", from == null ? null : Timestamp.valueOf(from))
+              .bind("to", to == null ? null : Timestamp.valueOf(to))
               .mapToMap()
               .stream();
       return result.map(map -> new Booking(
@@ -77,11 +99,11 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
     return jdbi.inTransaction((Handle handle) -> {
       var result =
           handle.createQuery("SELECT * FROM booking WHERE room_id = :id " +
-                  "AND (:from is null OR time_from >= :from)" +
-                  "AND (:to is null OR time_to <= :to);")
+                  "AND (:from is null OR time_from >= :from OR time_to >= :from)" +
+                  "AND (:to is null OR time_from <= :to OR time_to <= :to);")
               .bind("id", id)
-              .bind("from", from)
-              .bind("to", to)
+              .bind("from", from == null ? null : Timestamp.valueOf(from))
+              .bind("to", to == null ? null : Timestamp.valueOf(to))
               .mapToMap()
               .stream();
       return result.map(map -> new Booking(
@@ -97,7 +119,11 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
   @Override
   public Booking addBooking(BookingDTO bookingDTO) throws ValidationException, OverlapException {
     return jdbi.inTransaction((Handle handle) -> {
-      // add checks
+      if (userRepository.getUser(bookingDTO.userID()).isEmpty() ||
+      roomRepository.getRoom(bookingDTO.roomID()).isEmpty()) {
+        throw new ValidationException("Room or user problem", "Room with id: " + bookingDTO.roomID() + " or user with id: " + bookingDTO.userID() + "doesn't exist");
+      }
+      validateTime(bookingDTO);
       var result = handle.createUpdate("IF (\n" +
               "\t\tselect count(*) \n" +
               "\t\tfrom booking \n" +
@@ -115,7 +141,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
           .bind("time_to", Timestamp.valueOf(bookingDTO.to()))
           .executeAndReturnGeneratedKeys("booking_id").mapToMap().findFirst();
       if (result.isEmpty()) {
-        throw new OverlapException("Booking time overlaps", "Time from or time to", bookingDTO.from().toString() + " -> " + bookingDTO.to().toString());
+        throw new OverlapException("Booking time overlaps", "Time from or time to", bookingDTO.from() + " -> " + bookingDTO.to());
       }
       long generatedID = (long) result.get().get("booking_id");
       return new Booking(generatedID, bookingDTO.from(), bookingDTO.to(), bookingDTO.userID(), bookingDTO.roomID());
@@ -125,7 +151,73 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
   @Override
   public void deleteBooking(Booking toDelete) {
     jdbi.useTransaction((Handle handle) -> {
-      handle.createUpdate("DELETE FROM booking WHERE id = :id").bind("id", toDelete.id).execute();
+      handle.createUpdate("DELETE FROM booking WHERE booking_id = :id").bind("id", toDelete.id).execute();
     });
+  }
+
+  private void validateTime(BookingDTO bookingDTO) throws ValidationException {
+    if (bookingDTO.to().minus(minimumTime).isBefore(bookingDTO.from())) {
+      throw new ValidationException("Booking time is less than minimum", "Minimum time of booking is: " + minimumTime);
+    }
+    if (LocalDateTime.now().isBefore(bookingDTO.from())) {
+      throw new ValidationException(
+          "Booking can't be in the past",
+          "Booking start time is: " +
+          bookingDTO.from() +
+          " while current time is: " +
+          LocalDateTime.now());
+    }
+    if (bookingDTO.to().minus(inFutureAvailability).isAfter(LocalDateTime.now())) {
+      throw new ValidationException(
+          "Booking is too far in the future",
+          "Booking end time is: " +
+              bookingDTO.to() +
+              " while current time is: " +
+              LocalDateTime.now() +
+              " with difference of: " +
+              Period.between(LocalDateTime.now().toLocalDate(), bookingDTO.to().toLocalDate()) +
+              " while maximum time in the future is: " +
+              inFutureAvailability);
+    }
+    LocalDateTime periodStart = timeThresholdMethod.periodStartFunc.apply(bookingDTO.from());
+    User user = userRepository.getUser(bookingDTO.userID()).get();
+    Boolean passedPremiumCheck = true;
+    for (int i = 0; i < streakRequirement; i++) {
+      if (user.getTotalBookTime(
+          periodStart.minus(timeThresholdMethod.timePeriod.multipliedBy(i + 1)),
+          periodStart.minus(timeThresholdMethod.timePeriod.multipliedBy(i)),
+          this
+      ).compareTo(premiumThreshold) < 0) {
+        passedPremiumCheck = false;
+        break;
+      }
+    }
+    Duration currentBookedDuration = user.getTotalBookTime(
+        periodStart,
+        periodStart.plus(timeThresholdMethod.timePeriod),
+        this
+    );
+    Duration newBookingDuration;
+    Duration addedDuration;
+    try {
+      addedDuration = Duration.between(bookingDTO.from(), bookingDTO.to());
+      newBookingDuration = currentBookedDuration.plus(addedDuration);
+    } catch (ArithmeticException e) {
+      throw new ValidationException("Booking duration is too big", "From: " + bookingDTO.from() + " to: " + bookingDTO.to());
+    }
+    if (newBookingDuration.compareTo(passedPremiumCheck ? premiumLimit : usualLimit) > 0) {
+      throw new ValidationException(
+          "Tried to book too much",
+          "From: " +
+              periodStart +
+              " up to: " +
+              periodStart.plus(timeThresholdMethod.timePeriod) +
+              " already booked: " +
+              currentBookedDuration +
+              " and tried to add: " +
+              addedDuration +
+              " while limit is: " +
+              (passedPremiumCheck ? premiumLimit : usualLimit));
+    }
   }
 }

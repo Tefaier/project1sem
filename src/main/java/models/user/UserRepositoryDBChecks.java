@@ -88,7 +88,8 @@ public class UserRepositoryDBChecks implements UserRepository {
           .mapToMap().list();
       return result.stream().map(map -> new User(
           (long) map.get("account_id"),
-          (String) map.get("name"))).toList();
+          (String) map.get("name"))
+      ).toList();
     });
   }
 }

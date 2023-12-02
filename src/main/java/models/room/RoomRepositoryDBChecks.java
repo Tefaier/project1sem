@@ -98,7 +98,6 @@ public class RoomRepositoryDBChecks implements RoomRepository {
   @Override
   public List<Room> getAllRooms() {
     return jdbi.inTransaction((Handle handle) -> {
-      // add checks
       var result = handle.createQuery("SELECT * FROM room")
           .mapToMap().list();
       return result.stream().map(map -> new Room(
@@ -106,7 +105,8 @@ public class RoomRepositoryDBChecks implements RoomRepository {
           (String) map.get("name"),
           (boolean) map.get("restricts"),
           (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_from")).toLocalTime() : null,
-          (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null)).toList();
+          (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null)
+      ).toList();
     });
   }
 }
