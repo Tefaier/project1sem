@@ -4,6 +4,7 @@ import exceptions.OverlapException;
 import models.booking.Booking;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.slf4j.Logger;
 import records.RoomDTO;
 
 import java.sql.Connection;
@@ -31,12 +32,7 @@ public class RoomRepositoryDBChecks implements RoomRepository {
       if (result.isEmpty()) {
         return Optional.empty();
       }
-      return Optional.of(new Room(
-          (long) result.get().get("room_id"),
-          (String) result.get().get("name"),
-          (boolean) result.get().get("restricts"),
-          (boolean) result.get().get("restricts") ? Time.valueOf((String) result.get().get("time_from")).toLocalTime() : null,
-          (boolean) result.get().get("restricts") ? Time.valueOf((String) result.get().get("time_to")).toLocalTime() : null));
+      return Optional.of(Room.parseMap(result.get()));
     });
   }
 
@@ -51,12 +47,7 @@ public class RoomRepositoryDBChecks implements RoomRepository {
       if (result.isEmpty()) {
         return Optional.empty();
       }
-      return Optional.of(new Room(
-          (long) result.get().get("room_id"),
-          (String) result.get().get("name"),
-          (boolean) result.get().get("restricts"),
-          (boolean) result.get().get("restricts") ? Time.valueOf((String) result.get().get("time_from")).toLocalTime() : null,
-          (boolean) result.get().get("restricts") ? Time.valueOf((String) result.get().get("time_to")).toLocalTime() : null));
+      return Optional.of(Room.parseMap(result.get()));
     });
   }
 
@@ -100,13 +91,7 @@ public class RoomRepositoryDBChecks implements RoomRepository {
     return jdbi.inTransaction((Handle handle) -> {
       var result = handle.createQuery("SELECT * FROM room")
           .mapToMap().list();
-      return result.stream().map(map -> new Room(
-          (long) map.get("room_id"),
-          (String) map.get("name"),
-          (boolean) map.get("restricts"),
-          (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_from")).toLocalTime() : null,
-          (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null)
-      ).toList();
+      return result.stream().map(Room::parseMap).toList();
     });
   }
 }

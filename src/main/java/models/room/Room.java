@@ -1,9 +1,13 @@
 package models.room;
 
+import models.booking.Booking;
 import models.booking.BookingRepository;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Map;
 
 public class Room {
   public final long id;
@@ -22,5 +26,14 @@ public class Room {
 
   public boolean isFreeAtPeriod(LocalDateTime periodStart, LocalDateTime periodFinish, BookingRepository bookingRepository) {
     return bookingRepository.getBookingsByRoom(id, periodStart, periodFinish).isEmpty();
+  }
+
+  public static Room parseMap(Map<String, Object> map) {
+    return new Room(
+        (long) map.get("room_id"),
+        (String) map.get("name"),
+        (boolean) map.get("restricts"),
+        (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_from")).toLocalTime() : null,
+        (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null);
   }
 }

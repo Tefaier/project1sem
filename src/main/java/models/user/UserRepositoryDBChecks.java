@@ -31,9 +31,7 @@ public class UserRepositoryDBChecks implements UserRepository {
       if (result.isEmpty()) {
         return Optional.empty();
       }
-      return Optional.of(new User(
-          (long) result.get().get("account_id"),
-          (String) result.get().get("name")));
+      return Optional.of(User.parseMap(result.get()));
     });
   }
 
@@ -48,9 +46,7 @@ public class UserRepositoryDBChecks implements UserRepository {
       if (result.isEmpty()) {
         return Optional.empty();
       }
-      return Optional.of(new User(
-          (long) result.get().get("account_id"),
-          (String) result.get().get("name")));
+      return Optional.of(User.parseMap(result.get()));
     });
   }
 
@@ -86,10 +82,7 @@ public class UserRepositoryDBChecks implements UserRepository {
     return jdbi.inTransaction((Handle handle) -> {
       var result = handle.createQuery("SELECT * FROM account")
           .mapToMap().list();
-      return result.stream().map(map -> new User(
-          (long) map.get("account_id"),
-          (String) map.get("name"))
-      ).toList();
+      return result.stream().map(User::parseMap).toList();
     });
   }
 }

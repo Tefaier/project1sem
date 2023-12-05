@@ -1,5 +1,12 @@
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.booking.BookingRepository;
+import models.booking.BookingRepositoryDBChecksPremium;
+import models.booking.TimeThreshold;
+import models.room.RoomRepository;
+import models.room.RoomRepositoryDBChecks;
+import models.user.UserRepository;
+import models.user.UserRepositoryDBChecks;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
@@ -8,22 +15,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
-  public static void main(String[] args) throws SQLException, ClassNotFoundException {
-    /*
-    Class.forName("org.postgresql.Driver");
-    Connection connection =
-        DriverManager.getConnection("jdbc:postgresql://localhost:5432/testDB", "postgres",
-            "otopi24cutie");
-
-    PreparedStatement preparedStatement = connection.prepareStatement(
-        "INSERT INTO users (firstName, lastName) VALUES (?, ?)"
-    );
-    preparedStatement.setString(1, "Иван");
-    preparedStatement.setString(2, "Иванов");
-    preparedStatement.executeUpdate();
-*/
+  public static void main(String[] args) {
     Config config = ConfigFactory.load();
 
     Flyway flyway =
@@ -33,14 +29,28 @@ public class Main {
             .dataSource(config.getString("app.database.url"), config.getString("app.database.user"),
                 config.getString("app.database.password"))
             .load();
+    flyway.migrate();
 
-    Jdbi jdbi = Jdbi.create("jdbc:postgresql://localhost:5432/postgres", "postgres", "otopi24cutie");
-    jdbi.useTransaction((Handle handle) -> {
-      handle
-          .createUpdate("INSERT INTO users (firstName, lastName) VALUES (:firstName, :lastName)")
-          .bind("firstName", "Иван")
-          .bind("lastName", "Иванов")
-          .execute();
-    });
+    Jdbi jdbi = Jdbi.create(
+        config.getString("app.database.url"),
+        config.getString("app.database.user"),
+        config.getString("app.database.password")
+    );
+
+    UserRepository userRepository = new UserRepositoryDBChecks(jdbi);
+    RoomRepository roomRepository = new RoomRepositoryDBChecks(jdbi);
+    BookingRepository bookingRepository = new BookingRepositoryDBChecksPremium(
+        roomRepository,
+        userRepository,
+        jdbi,
+        config.getDuration("app.rules.booking.minimumTime"),
+        config.getDuration("app.rules.booking.usualTimeLimit"),
+        config.getDuration("app.rules.booking.premiumTimeLimit"),
+        config.getInt("app.rules.booking.streakRequirementForPremium"),
+        config.getDuration("app.rules.booking.timeRequirementForPremium"),
+        config.getEnum(TimeThreshold.class, "app.rules.booking.timeThresholdMethod"),
+        config.getDuration("app.rules.booking.inFutureAvailability")
+    );
+
   }
 }

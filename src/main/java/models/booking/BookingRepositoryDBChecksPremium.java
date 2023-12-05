@@ -7,6 +7,7 @@ import models.user.User;
 import models.user.UserRepository;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.slf4j.Logger;
 import records.BookingDTO;
 
 import java.sql.Timestamp;
@@ -17,8 +18,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class BookingRepositoryDBChecksPremium implements BookingRepository {
-  public static TimeThreshold timeThreshold = TimeThreshold.byWeek;
-
   private final RoomRepository roomRepository;
   private final UserRepository userRepository;
   private final Jdbi jdbi;
@@ -63,12 +62,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
       if (result.isEmpty()) {
         return Optional.empty();
       }
-      return Optional.of(new Booking(
-          (long) result.get().get("booking_id"),
-          Timestamp.valueOf((String) result.get().get("time_from")).toLocalDateTime(),
-          Timestamp.valueOf((String) result.get().get("time_to")).toLocalDateTime(),
-          (long) result.get().get("account_id"),
-          (long) result.get().get("room_id")));
+      return Optional.of(Booking.parseMap(result.get()));
     });
   }
 
@@ -84,13 +78,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
               .bind("to", to == null ? null : Timestamp.valueOf(to))
               .mapToMap()
               .stream();
-      return result.map(map -> new Booking(
-          (long) map.get("booking_id"),
-          Timestamp.valueOf((String) map.get("time_from")).toLocalDateTime(),
-          Timestamp.valueOf((String) map.get("time_to")).toLocalDateTime(),
-          (long) map.get("account_id"),
-          (long) map.get("room_id")
-      )).toList();
+      return result.map(Booking::parseMap).toList();
     });
   }
 
@@ -106,13 +94,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
               .bind("to", to == null ? null : Timestamp.valueOf(to))
               .mapToMap()
               .stream();
-      return result.map(map -> new Booking(
-          (long) map.get("booking_id"),
-          Timestamp.valueOf((String) map.get("time_from")).toLocalDateTime(),
-          Timestamp.valueOf((String) map.get("time_to")).toLocalDateTime(),
-          (long) map.get("account_id"),
-          (long) map.get("room_id")
-      )).toList();
+      return result.map(Booking::parseMap).toList();
     });
   }
 
@@ -155,18 +137,47 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
     });
   }
 
+  private boolean passedPremiumCheck (BookingDTO bookingDTO, User user) {
+    LocalDateTime periodStart = timeThresholdMethod.periodStartFunc.apply(bookingDTO.from());
+    Boolean passedPremiumCheck = true;
+    for (int i = 0; i < streakRequirement; i++) {
+      if (user.getTotalBookTime(
+          periodStart.minus(timeThresholdMethod.timePeriod.multipliedBy(i + 1)),
+          periodStart.minus(timeThresholdMethod.timePeriod.multipliedBy(i)),
+          this
+      ).compareTo(premiumThreshold) < 0) {
+        passedPremiumCheck = false;
+        break;
+      }
+    }
+    return passedPremiumCheck;
+  }
+
   private void validateTime(BookingDTO bookingDTO) throws ValidationException {
+    validateMinimumDuration(bookingDTO);
+    validateInThePast(bookingDTO);
+    validateFarInFuture(bookingDTO);
+    validateTimeLimit(bookingDTO);
+  }
+
+  private void validateMinimumDuration (BookingDTO bookingDTO) throws ValidationException {
     if (bookingDTO.to().minus(minimumTime).isBefore(bookingDTO.from())) {
       throw new ValidationException("Booking time is less than minimum", "Minimum time of booking is: " + minimumTime);
     }
+  }
+
+  private void validateInThePast (BookingDTO bookingDTO) throws ValidationException {
     if (LocalDateTime.now().isBefore(bookingDTO.from())) {
       throw new ValidationException(
           "Booking can't be in the past",
           "Booking start time is: " +
-          bookingDTO.from() +
-          " while current time is: " +
-          LocalDateTime.now());
+              bookingDTO.from() +
+              " while current time is: " +
+              LocalDateTime.now());
     }
+  }
+
+  private void validateFarInFuture (BookingDTO bookingDTO) throws ValidationException {
     if (bookingDTO.to().minus(inFutureAvailability).isAfter(LocalDateTime.now())) {
       throw new ValidationException(
           "Booking is too far in the future",
@@ -179,19 +190,12 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
               " while maximum time in the future is: " +
               inFutureAvailability);
     }
+  }
+
+  private void validateTimeLimit (BookingDTO bookingDTO) throws ValidationException {
     LocalDateTime periodStart = timeThresholdMethod.periodStartFunc.apply(bookingDTO.from());
     User user = userRepository.getUser(bookingDTO.userID()).get();
-    Boolean passedPremiumCheck = true;
-    for (int i = 0; i < streakRequirement; i++) {
-      if (user.getTotalBookTime(
-          periodStart.minus(timeThresholdMethod.timePeriod.multipliedBy(i + 1)),
-          periodStart.minus(timeThresholdMethod.timePeriod.multipliedBy(i)),
-          this
-      ).compareTo(premiumThreshold) < 0) {
-        passedPremiumCheck = false;
-        break;
-      }
-    }
+    boolean passedPremiumCheck = passedPremiumCheck(bookingDTO, user);
     Duration currentBookedDuration = user.getTotalBookTime(
         periodStart,
         periodStart.plus(timeThresholdMethod.timePeriod),

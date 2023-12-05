@@ -2,9 +2,12 @@ package models.user;
 
 import models.booking.Booking;
 import models.booking.BookingRepository;
+import models.room.Room;
 
+import java.sql.Time;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public class User {
   public final long id;
@@ -23,5 +26,11 @@ public class User {
       }
     }
     return totalDuration;
+  }
+
+  public static User parseMap(Map<String, Object> map) {
+    return new User(
+        (long) map.get("account_id"),
+        (String) map.get("name"));
   }
 }
