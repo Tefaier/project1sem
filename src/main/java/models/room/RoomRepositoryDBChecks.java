@@ -71,7 +71,7 @@ public class RoomRepositoryDBChecks implements RoomRepository {
   @Override
   public Room editRoom(Room from, RoomDTO to) {
     jdbi.useTransaction((Handle handle) -> {
-      handle.createUpdate("UPDATE room SET " +
+      int updatedRows = handle.createUpdate("UPDATE room SET " +
               "name = :name, " +
               "restricts = :restricts, " +
               "time_from = :time_from " +
@@ -82,6 +82,9 @@ public class RoomRepositoryDBChecks implements RoomRepository {
           .bind("time_from", to.from())
           .bind("time_to", to.to())
           .execute();
+      if (updatedRows == 0) {
+        throw new OverlapException("Room name overlaps", "name", to.name());
+      }
     });
     return getRoom(from.id).get();
   }

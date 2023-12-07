@@ -2,6 +2,7 @@ package models.booking;
 
 import exceptions.OverlapException;
 import exceptions.ValidationException;
+import models.room.Room;
 import models.room.RoomRepository;
 import models.user.User;
 import models.user.UserRepository;
@@ -13,6 +14,7 @@ import records.BookingDTO;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Period;
 import java.util.List;
 import java.util.Optional;
@@ -157,6 +159,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
     validateMinimumDuration(bookingDTO);
     validateInThePast(bookingDTO);
     validateFarInFuture(bookingDTO);
+    validateRoomLimit(bookingDTO);
     validateTimeLimit(bookingDTO);
   }
 
@@ -189,6 +192,13 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
               Period.between(LocalDateTime.now().toLocalDate(), bookingDTO.to().toLocalDate()) +
               " while maximum time in the future is: " +
               inFutureAvailability);
+    }
+  }
+
+  private void validateRoomLimit (BookingDTO bookingDTO) throws ValidationException {
+    Room room = roomRepository.getRoom(bookingDTO.roomID()).get();
+    if (!room.isOpenAtPeriod(bookingDTO.from(), bookingDTO.to())) {
+      throw new ValidationException("Room limit doesn't allow this booking", "Room " + room.name + " is open from: " + room.availableFrom + " up to: " + room.availableTo);
     }
   }
 

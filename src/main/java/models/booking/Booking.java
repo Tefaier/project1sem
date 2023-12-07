@@ -1,10 +1,13 @@
 package models.booking;
 
+import lombok.EqualsAndHashCode;
+
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+@EqualsAndHashCode
 public class Booking {
   public final long id;
   public final LocalDateTime timeFrom;

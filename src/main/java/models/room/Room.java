@@ -1,14 +1,17 @@
 package models.room;
 
+import lombok.EqualsAndHashCode;
 import models.booking.Booking;
 import models.booking.BookingRepository;
 
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
 
+@EqualsAndHashCode
 public class Room {
   public final long id;
   public final String name;
@@ -32,8 +35,21 @@ public class Room {
     return new Room(
         (long) map.get("room_id"),
         (String) map.get("name"),
-        (boolean) map.get("restricts"),
+        !((boolean) map.get("restricts")),
         (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_from")).toLocalTime() : null,
         (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null);
+  }
+
+  public boolean isOpenAtPeriod(LocalDateTime periodStart, LocalDateTime periodFinish) {
+    if (noCheck || periodStart == null || periodFinish == null) {
+      return true;
+    }
+    LocalTime inDayStartTime = periodStart.toLocalTime();
+    if (inDayStartTime.isBefore(availableFrom) || inDayStartTime.isAfter(availableTo)) {
+      return false;
+    }
+    Duration leftTime = Duration.between(inDayStartTime, availableTo);
+    Duration neededTime = Duration.between(periodStart, periodFinish);
+    return leftTime.compareTo(neededTime) >= 0;
   }
 }

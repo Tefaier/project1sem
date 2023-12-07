@@ -11,6 +11,6 @@ public interface RoomRepository {
   public Optional<Room> getRoom(String name);
   public Optional<Room> getRoom(Long id);
   public Room addRoom(RoomDTO roomDTO) throws OverlapException;
-  public Room editRoom(Room from, RoomDTO to);
+  public Room editRoom(Room from, RoomDTO to) throws OverlapException;
   public List<Room> getAllRooms();
 }

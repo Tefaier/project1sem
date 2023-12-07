@@ -67,12 +67,15 @@ public class UserRepositoryDBChecks implements UserRepository {
   @Override
   public User editUser(User from, UserDTO to) {
     jdbi.useTransaction((Handle handle) -> {
-      handle.createUpdate("UPDATE account SET " +
+      int updatedRows = handle.createUpdate("UPDATE account SET " +
               "name = :name " +
               "WHERE account_id = :id")
           .bind("name", to.name())
           .bind("id", from.id)
           .execute();
+      if (updatedRows == 0) {
+        throw new OverlapException("User name overlaps", "name", to.name());
+      }
     });
     return getUser(from.id).get();
   }

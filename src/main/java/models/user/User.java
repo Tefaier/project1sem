@@ -1,5 +1,6 @@
 package models.user;
 
+import lombok.EqualsAndHashCode;
 import models.booking.Booking;
 import models.booking.BookingRepository;
 import models.room.Room;
@@ -9,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+@EqualsAndHashCode
 public class User {
   public final long id;
   public final String name;
