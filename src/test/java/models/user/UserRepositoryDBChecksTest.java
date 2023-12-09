@@ -39,7 +39,7 @@ class UserRepositoryDBChecksTest {
 
   @BeforeEach
   void beforeEach() {
-    jdbi.useTransaction(handle -> handle.createUpdate("DELETE FROM account; DELETE FROM room; DELETE FROM booking;").execute());
+    jdbi.useTransaction(handle -> handle.createUpdate("DELETE FROM booking; DELETE FROM room; DELETE FROM account;").execute());
   }
 
   @Test

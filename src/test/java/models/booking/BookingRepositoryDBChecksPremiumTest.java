@@ -63,12 +63,12 @@ class BookingRepositoryDBChecksPremiumTest {
 
   @BeforeEach
   void beforeEach() {
-    jdbi.useTransaction(handle -> handle.createUpdate("DELETE FROM account; DELETE FROM room; DELETE FROM booking;").execute());
+    jdbi.useTransaction(handle -> handle.createUpdate("DELETE FROM booking; DELETE FROM room; DELETE FROM account;").execute());
   }
 
   @Test
   void getBooking() {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now().plusDays(1);
     User user = userRepository.addUser(new UserDTO("meow"));
     Room room = roomRepository.addRoom(new RoomDTO(null, null, true, "parp"));
     Booking booking = bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user.id, room.id));
@@ -77,13 +77,14 @@ class BookingRepositoryDBChecksPremiumTest {
 
   @Test
   void getBookingsByUser() {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now().plusDays(1);
     User user1 = userRepository.addUser(new UserDTO("meow"));
     User user2 = userRepository.addUser(new UserDTO("rawr"));
     Room room = roomRepository.addRoom(new RoomDTO(null, null, true, "parp"));
+    Room room2 = roomRepository.addRoom(new RoomDTO(null, null, true, "hawk"));
     bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user1.id, room.id));
     bookingRepository.addBooking(new BookingDTO(now.plusHours(2), now.plusHours(3), user1.id, room.id));
-    bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user2.id, room.id));
+    bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user2.id, room2.id));
 
     Assertions.assertEquals(1, bookingRepository.getBookingsByUser(user1.id, now, now.plusHours(1)).size());
     Assertions.assertEquals(2, bookingRepository.getBookingsByUser(user1.id, null, null).size());
@@ -91,13 +92,14 @@ class BookingRepositoryDBChecksPremiumTest {
 
   @Test
   void getBookingsByRoom() {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now().plusDays(1);
     User user = userRepository.addUser(new UserDTO("meow"));
+    User user2 = userRepository.addUser(new UserDTO("puff"));
     Room room1 = roomRepository.addRoom(new RoomDTO(null, null, true, "parp"));
     Room room2 = roomRepository.addRoom(new RoomDTO(null, null, true, "hawk"));
     bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user.id, room1.id));
     bookingRepository.addBooking(new BookingDTO(now.plusHours(2), now.plusHours(3), user.id, room1.id));
-    bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user.id, room2.id));
+    bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user2.id, room2.id));
 
     Assertions.assertEquals(1, bookingRepository.getBookingsByRoom(room1.id, now, now.plusHours(1)).size());
     Assertions.assertEquals(2, bookingRepository.getBookingsByRoom(room1.id, null, null).size());
@@ -134,7 +136,7 @@ class BookingRepositoryDBChecksPremiumTest {
 
   @Test
   void deleteBooking() {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now().plusDays(1);
     User user = userRepository.addUser(new UserDTO("meow"));
     Room room = roomRepository.addRoom(new RoomDTO(null, null, true, "parp"));
     Booking booking = bookingRepository.addBooking(new BookingDTO(now, now.plusHours(1), user.id, room.id));

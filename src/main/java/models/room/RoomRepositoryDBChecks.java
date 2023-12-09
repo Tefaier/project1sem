@@ -1,18 +1,13 @@
 package models.room;
 
 import exceptions.OverlapException;
-import models.booking.Booking;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.slf4j.Logger;
+import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import records.RoomDTO;
 
-import java.sql.Connection;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class RoomRepositoryDBChecks implements RoomRepository {
   private final Jdbi jdbi;
@@ -54,35 +49,38 @@ public class RoomRepositoryDBChecks implements RoomRepository {
   @Override
   public Room addRoom(RoomDTO roomDTO) throws OverlapException {
     return jdbi.inTransaction((Handle handle) -> {
-      var result = handle.createUpdate("INSERT INTO room (name, restricts, time_from, time_to) VALUES (:name, :restricts, :time_from, :time_to);")
-          .bind("name", roomDTO.name())
-          .bind("restricts", !roomDTO.noCheck())
-          .bind("time_from", roomDTO.from())
-          .bind("time_to", roomDTO.to())
-          .executeAndReturnGeneratedKeys("room_id").mapToMap().findFirst();
-      if (result.isEmpty()) {
+      try {
+        var result = handle.createUpdate("INSERT INTO room (name, restricts, time_from, time_to) VALUES (:name, :restricts, :time_from, :time_to);")
+            .bind("name", roomDTO.name())
+            .bind("restricts", !roomDTO.noCheck())
+            .bind("time_from", roomDTO.from())
+            .bind("time_to", roomDTO.to())
+            .executeAndReturnGeneratedKeys("room_id").mapToMap().findFirst();
+        long generatedID = (long) result.get().get("room_id");
+        return new Room(generatedID, roomDTO.name(), roomDTO.noCheck(), roomDTO.from(), roomDTO.to());
+      } catch (UnableToExecuteStatementException e) {
         throw new OverlapException("Room name overlaps", "name", roomDTO.name());
       }
-      long generatedID = (long) result.get().get("room_id");
-      return new Room(generatedID, roomDTO.name(), !roomDTO.noCheck(), roomDTO.from(), roomDTO.to());
     });
   }
 
   @Override
   public Room editRoom(Room from, RoomDTO to) {
     jdbi.useTransaction((Handle handle) -> {
-      int updatedRows = handle.createUpdate("UPDATE room SET " +
-              "name = :name, " +
-              "restricts = :restricts, " +
-              "time_from = :time_from " +
-              "time_to = :time_to " +
-              "WHERE room_id = :id")
-          .bind("name", to.name())
-          .bind("restricts", !to.noCheck())
-          .bind("time_from", to.from())
-          .bind("time_to", to.to())
-          .execute();
-      if (updatedRows == 0) {
+      try {
+        handle.createUpdate("UPDATE room SET " +
+                "name = :name, " +
+                "restricts = :restricts, " +
+                "time_from = :time_from, " +
+                "time_to = :time_to " +
+                "WHERE room_id = :id")
+            .bind("id", from.id)
+            .bind("name", to.name())
+            .bind("restricts", !to.noCheck())
+            .bind("time_from", to.from())
+            .bind("time_to", to.to())
+            .execute();
+      } catch (UnableToExecuteStatementException e) {
         throw new OverlapException("Room name overlaps", "name", to.name());
       }
     });

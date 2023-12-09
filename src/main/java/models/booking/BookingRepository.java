@@ -7,7 +7,6 @@ import records.BookingDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface BookingRepository {
   public Optional<Booking> getBooking(Long id);

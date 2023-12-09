@@ -17,8 +17,8 @@ public class Booking {
 
   public Booking(long id, LocalDateTime timeFrom, LocalDateTime timeTo, long userId, long roomId) {
     this.id = id;
-    this.timeFrom = timeFrom;
-    this.timeTo = timeTo;
+    this.timeFrom = timeFrom.withNano(0);
+    this.timeTo = timeTo.withNano(0);
     this.userId = userId;
     this.roomId = roomId;
   }
@@ -29,14 +29,16 @@ public class Booking {
 
   public boolean overlapsWithPeriod(LocalDateTime periodStart, LocalDateTime periodFinish) {
     return timeFrom.isAfter(periodStart) && timeFrom.isBefore(periodFinish) ||
-        timeTo.isAfter(periodStart) && timeTo.isBefore(periodFinish);
+        timeTo.isAfter(periodStart) && timeTo.isBefore(periodFinish) ||
+        timeFrom.isBefore(periodStart) && timeTo.isAfter(periodFinish) ||
+        timeFrom.isAfter(periodStart) && timeTo.isBefore(periodFinish);
   }
 
   public static Booking parseMap(Map<String, Object> map) {
     return new Booking(
         (long) map.get("booking_id"),
-        Timestamp.valueOf((String) map.get("time_from")).toLocalDateTime(),
-        Timestamp.valueOf((String) map.get("time_to")).toLocalDateTime(),
+        ((Timestamp) map.get("time_from")).toLocalDateTime(),
+        ((Timestamp) map.get("time_to")).toLocalDateTime(),
         (long) map.get("account_id"),
         (long) map.get("room_id"));
   }

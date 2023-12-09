@@ -1,12 +1,10 @@
 package models.user;
 
 import exceptions.OverlapException;
-import models.user.User;
 import records.UserDTO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface UserRepository {
   public Optional<User> getUser(String name);

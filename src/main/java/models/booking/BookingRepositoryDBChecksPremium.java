@@ -8,13 +8,11 @@ import models.user.User;
 import models.user.UserRepository;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.slf4j.Logger;
 import records.BookingDTO;
 
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.Period;
 import java.util.List;
 import java.util.Optional;
@@ -73,8 +71,8 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
     return jdbi.inTransaction((Handle handle) -> {
       var result =
           handle.createQuery("SELECT * FROM booking WHERE account_id = :id " +
-                  "AND (:from is null OR time_from >= :from OR time_to >= :from)" +
-                  "AND (:to is null OR time_from <= :to OR time_to <= :to);")
+                  "AND (:from::timestamptz is null OR time_from >= :from::timestamptz OR time_to >= :from::timestamptz) " +
+                  "AND (:to::timestamptz is null OR time_from <= :to::timestamptz OR time_to <= :to::timestamptz);")
               .bind("id", id)
               .bind("from", from == null ? null : Timestamp.valueOf(from))
               .bind("to", to == null ? null : Timestamp.valueOf(to))
@@ -89,8 +87,8 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
     return jdbi.inTransaction((Handle handle) -> {
       var result =
           handle.createQuery("SELECT * FROM booking WHERE room_id = :id " +
-                  "AND (:from is null OR time_from >= :from OR time_to >= :from)" +
-                  "AND (:to is null OR time_from <= :to OR time_to <= :to);")
+                  "AND (:from::timestamptz is null OR time_from >= :from::timestamptz OR time_to >= :from::timestamptz)" +
+                  "AND (:to::timestamptz is null OR time_from <= :to::timestamptz OR time_to <= :to::timestamptz);")
               .bind("id", id)
               .bind("from", from == null ? null : Timestamp.valueOf(from))
               .bind("to", to == null ? null : Timestamp.valueOf(to))
@@ -108,25 +106,29 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
         throw new ValidationException("Room or user problem", "Room with id: " + bookingDTO.roomID() + " or user with id: " + bookingDTO.userID() + "doesn't exist");
       }
       validateTime(bookingDTO);
-      var result = handle.createUpdate("IF (\n" +
-              "\t\tselect count(*) \n" +
-              "\t\tfrom booking \n" +
-              "\t\twhere (room_id = :room_id or account_id = :account_id) and \n" +
-              "\t\t(time_from between :time_from and :time_to) or \n" +
-              "\t\t(time_to between :time_from and :time_to) or\n" +
-              "\t\t(time_from <= :time_from and time_to >= :time_to))\n" +
-              "\t) = 0 THEN\n" +
-              "    \tINSERT INTO booking(account_id, room_id, time_from, time_to)\n" +
-              "    \tVALUES (:account_id, :room_id, :time_from, :time_to);\n" +
-              "\tEND IF;")
+      long overlaps = (long) handle.createQuery("select count(*) as counter " +
+          "from booking " +
+          "where (room_id = :room_id or account_id = :account_id) and " +
+          "((time_from between :time_from::timestamptz and :time_to::timestamptz) or " +
+          "(time_to between :time_from::timestamptz and :time_to::timestamptz) or " +
+          "(time_from <= :time_from::timestamptz and time_to >= :time_to::timestamptz))")
+          .bind("account_id", bookingDTO.userID())
+          .bind("room_id", bookingDTO.roomID())
+          .bind("time_from", Timestamp.valueOf(bookingDTO.from()))
+          .bind("time_to", Timestamp.valueOf(bookingDTO.to()))
+          .mapToMap()
+          .first()
+          .get("counter");
+      if (overlaps != 0) {
+        throw new OverlapException("Booking time overlaps", "Time from or time to", bookingDTO.from() + " -> " + bookingDTO.to());
+      }
+      var result = handle.createUpdate("INSERT INTO booking(account_id, room_id, time_from, time_to) " +
+              "VALUES (:account_id, :room_id, :time_from::timestamptz, :time_to::timestamptz);")
           .bind("account_id", bookingDTO.userID())
           .bind("room_id", bookingDTO.roomID())
           .bind("time_from", Timestamp.valueOf(bookingDTO.from()))
           .bind("time_to", Timestamp.valueOf(bookingDTO.to()))
           .executeAndReturnGeneratedKeys("booking_id").mapToMap().findFirst();
-      if (result.isEmpty()) {
-        throw new OverlapException("Booking time overlaps", "Time from or time to", bookingDTO.from() + " -> " + bookingDTO.to());
-      }
       long generatedID = (long) result.get().get("booking_id");
       return new Booking(generatedID, bookingDTO.from(), bookingDTO.to(), bookingDTO.userID(), bookingDTO.roomID());
     });
@@ -170,7 +172,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
   }
 
   private void validateInThePast (BookingDTO bookingDTO) throws ValidationException {
-    if (LocalDateTime.now().isBefore(bookingDTO.from())) {
+    if (LocalDateTime.now().isAfter(bookingDTO.from())) {
       throw new ValidationException(
           "Booking can't be in the past",
           "Booking start time is: " +

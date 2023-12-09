@@ -1,11 +1,9 @@
 package models.room;
 
 import lombok.EqualsAndHashCode;
-import models.booking.Booking;
 import models.booking.BookingRepository;
 
 import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -23,8 +21,8 @@ public class Room {
     this.id = id;
     this.name = name;
     this.noCheck = noCheck;
-    this.availableFrom = availableFrom;
-    this.availableTo = availableTo;
+    this.availableFrom = availableFrom == null ? null : availableFrom.withNano(0);
+    this.availableTo = availableTo == null ? null : availableTo.withNano(0);
   }
 
   public boolean isFreeAtPeriod(LocalDateTime periodStart, LocalDateTime periodFinish, BookingRepository bookingRepository) {
@@ -36,8 +34,8 @@ public class Room {
         (long) map.get("room_id"),
         (String) map.get("name"),
         !((boolean) map.get("restricts")),
-        (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_from")).toLocalTime() : null,
-        (boolean) map.get("restricts") ? Time.valueOf((String) map.get("time_to")).toLocalTime() : null);
+        (boolean) map.get("restricts") ? ((Time) map.get("time_from")).toLocalTime() : null,
+        (boolean) map.get("restricts") ? ((Time) map.get("time_to")).toLocalTime() : null);
   }
 
   public boolean isOpenAtPeriod(LocalDateTime periodStart, LocalDateTime periodFinish) {

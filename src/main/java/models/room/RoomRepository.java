@@ -5,7 +5,6 @@ import records.RoomDTO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface RoomRepository {
   public Optional<Room> getRoom(String name);
