@@ -67,6 +67,6 @@ public class Main {
         objectMapper,
         new FreeMarkerEngine()
     );
-    controller.initEndpoints();
+    controller.init();
   }
 }
