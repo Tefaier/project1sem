@@ -200,10 +200,20 @@ class BookingControllerTest {
 
   @Test
   void updateTest () throws Exception {
+    LocalDateTime now = LocalDateTime.now().plusDays(1);
+    String debugName = "meow";
     String debugRoomName = "halt";
     String newName = "purr";
+    User user = objectMapper.readValue(createUser(new UserDTO(debugName)).body(), User.class);
     var response = createRoom(new RoomDTO(null, null, true, debugRoomName));
     Room room = objectMapper.readValue(response.body(), Room.class);
+
+    // test booking delete
+    Booking booking = objectMapper.readValue(createBooking(new BookingDTO(now, now.plusHours(1), user.id, room.id)).body(), Booking.class);
+    deleteBooking(booking.id);
+    response = createBooking(new BookingDTO(now, now.plusHours(1), user.id, room.id));
+    Assertions.assertEquals(201, response.statusCode());
+
     response = updateRoom(room.id, new RoomDTO(LocalTime.of(5, 0), LocalTime.of(15, 0), false, newName));
     Room newRoom = objectMapper.readValue(response.body(), Room.class);
 
