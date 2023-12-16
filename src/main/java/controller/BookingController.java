@@ -47,16 +47,19 @@ public class BookingController implements Controller {
     this.bookingRepository = bookingRepository;
     this.objectMapper = objectMapper;
     this.freeMarkerEngine = freeMarkerEngine;
-  }
-
-  @Override
-  public void init() {
     createUser();
     createRoom();
     updateRoom();
     book();
     unbook();
     getUserBookingList();
+  }
+
+  @Override
+  public void init() {
+    service.init();
+    service.awaitInitialization();
+    LOG.debug("Booking controller started");
   }
 
   private void createUser() {
@@ -165,8 +168,6 @@ public class BookingController implements Controller {
 
           long bookingId = Long.parseLong(request.params("bookingId"));
           response.type("application/json");
-          String body = request.body();
-          BookingDTO bookingDTO = objectMapper.readValue(body, BookingDTO.class);
           Optional<Booking> booking = bookingRepository.getBooking(bookingId);
           if (booking.isEmpty()) {
             LOG.debug("Cannot find the booking with ID " + bookingId);
@@ -174,7 +175,7 @@ public class BookingController implements Controller {
             return "Cannot find the booking with ID " + bookingId;
           }
           Booking bookingDeleted = booking.get();
-          bookingRepository.deleteBooking(booking.get());
+          bookingRepository.deleteBooking(bookingDeleted);
           response.status(200);
           return objectMapper.writeValueAsString(bookingDeleted);
         }
