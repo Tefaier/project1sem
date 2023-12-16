@@ -1,5 +1,8 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import controller.BookingController;
+import controller.Controller;
 import models.booking.BookingRepository;
 import models.booking.BookingRepositoryDBChecksPremium;
 import models.booking.TimeThreshold;
@@ -10,6 +13,8 @@ import models.user.UserRepositoryDBChecks;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import spark.Service;
+import spark.template.freemarker.FreeMarkerEngine;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -52,5 +57,16 @@ public class Main {
         config.getDuration("app.rules.booking.inFutureAvailability")
     );
 
+    Service service = Service.ignite();
+    ObjectMapper objectMapper = new ObjectMapper();
+    Controller controller = new BookingController(
+        service,
+        userRepository,
+        roomRepository,
+        bookingRepository,
+        objectMapper,
+        new FreeMarkerEngine()
+    );
+    controller.init();
   }
 }
