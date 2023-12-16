@@ -200,7 +200,7 @@ public class BookingController implements Controller {
           List<Map<String, String>> bookingMapList =
               bookings.stream()
                   .map(booking -> Map.of("id", "" + booking.id, "timeFrom", booking.timeFrom.toString(),
-                      "timeTo", booking.timeTo.toString(), "roomID", "" + booking.roomId))
+                      "timeTo", booking.timeTo.toString(), "roomId", "" + booking.roomId))
                   .toList();
           Map<String, Object> model = new HashMap<>();
           model.put("bookings", bookingMapList);

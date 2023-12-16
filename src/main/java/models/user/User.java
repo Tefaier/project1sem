@@ -1,5 +1,7 @@
 package models.user;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import models.booking.Booking;
 import models.booking.BookingRepository;
@@ -13,7 +15,10 @@ public class User {
   public final long id;
   public final String name;
 
-  public User(long id, String name) {
+  @JsonCreator
+  public User (
+      @JsonProperty("id") long id,
+      @JsonProperty("name") String name) {
     this.id = id;
     this.name = name;
   }

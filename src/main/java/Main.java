@@ -1,8 +1,10 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import controller.BookingController;
 import controller.Controller;
+import controller.TemplateFactory;
 import models.booking.BookingRepository;
 import models.booking.BookingRepositoryDBChecksPremium;
 import models.booking.TimeThreshold;
@@ -59,13 +61,14 @@ public class Main {
 
     Service service = Service.ignite();
     ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
     Controller controller = new BookingController(
         service,
         userRepository,
         roomRepository,
         bookingRepository,
         objectMapper,
-        new FreeMarkerEngine()
+        TemplateFactory.freeMarkerEngine()
     );
     controller.init();
   }

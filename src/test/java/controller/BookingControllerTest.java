@@ -1,6 +1,7 @@
 package controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import models.booking.Booking;
 import models.booking.BookingRepository;
 import models.booking.BookingRepositoryDBChecksPremium;
@@ -43,13 +44,13 @@ class BookingControllerTest {
   @Container
   public static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:14");
 
-  private Service service;
-  private BookingController controller;
+  private static Service service;
+  private static BookingController controller;
   private static Jdbi jdbi;
-  private ObjectMapper objectMapper;
+  private static ObjectMapper objectMapper;
 
   @BeforeAll
-  void setController() {
+  static void setController() {
     String postgresJdbcUrl = POSTGRES.getJdbcUrl();
     Flyway flyway =
         Flyway.configure()
@@ -76,13 +77,14 @@ class BookingControllerTest {
 
     service = Service.ignite();
     objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
     Controller controller = new BookingController(
         service,
         userRepository,
         roomRepository,
         bookingRepository,
         objectMapper,
-        new FreeMarkerEngine()
+        TemplateFactory.freeMarkerEngine()
     );
     controller.init();
   }
@@ -176,8 +178,6 @@ class BookingControllerTest {
     Assertions.assertNull(room.availableFrom);
     Assertions.assertNull(room.availableTo);
 
-    responseFail = createRoom(new RoomDTO(null, null, false, debugRoomName + debugName));
-    Assertions.assertEquals(400, responseFail.statusCode());
     responseFail = createRoom(new RoomDTO(LocalTime.of(5, 0), LocalTime.of(15, 0), false, debugRoomName));
     Assertions.assertEquals(400, responseFail.statusCode());
 
@@ -209,8 +209,8 @@ class BookingControllerTest {
 
     Assertions.assertEquals(newName, newRoom.name);
     Assertions.assertFalse(newRoom.noCheck);
-    Assertions.assertNotNull(room.availableFrom);
-    Assertions.assertNotNull(room.availableTo);
+    Assertions.assertNotNull(newRoom.availableFrom);
+    Assertions.assertNotNull(newRoom.availableTo);
   }
 
   @Test

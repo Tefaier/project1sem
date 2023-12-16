@@ -1,5 +1,7 @@
 package models.room;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import models.booking.BookingRepository;
 
@@ -17,7 +19,13 @@ public class Room {
   public final LocalTime availableFrom;
   public final LocalTime availableTo;
 
-  public Room(long id, String name, boolean noCheck, LocalTime availableFrom, LocalTime availableTo) {
+  @JsonCreator
+  public Room(
+      @JsonProperty("id") long id,
+      @JsonProperty("name") String name,
+      @JsonProperty("noCheck") boolean noCheck,
+      @JsonProperty("availableFrom") LocalTime availableFrom,
+      @JsonProperty("availableTo") LocalTime availableTo) {
     this.id = id;
     this.name = name;
     this.noCheck = noCheck;

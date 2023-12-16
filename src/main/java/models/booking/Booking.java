@@ -1,5 +1,8 @@
 package models.booking;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 
 import java.sql.Timestamp;
@@ -15,7 +18,13 @@ public class Booking {
   public final long userId;
   public final long roomId;
 
-  public Booking(long id, LocalDateTime timeFrom, LocalDateTime timeTo, long userId, long roomId) {
+  @JsonCreator
+  public Booking(
+      @JsonProperty("id") long id,
+      @JsonProperty("timeFrom") LocalDateTime timeFrom,
+      @JsonProperty("timeTo") LocalDateTime timeTo,
+      @JsonProperty("userId") long userId,
+      @JsonProperty("roomId") long roomId) {
     this.id = id;
     this.timeFrom = timeFrom.withNano(0);
     this.timeTo = timeTo.withNano(0);
@@ -23,6 +32,7 @@ public class Booking {
     this.roomId = roomId;
   }
 
+  @JsonIgnore
   public Duration getDuration() {
     return Duration.between(timeFrom, timeTo);
   }
