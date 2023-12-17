@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
   public static void main(String[] args) {
+
     Config config = ConfigFactory.load();
 
     Flyway flyway =
@@ -50,13 +51,13 @@ public class Main {
         roomRepository,
         userRepository,
         jdbi,
-        config.getDuration("app.rules.booking.minimumTime"),
-        config.getDuration("app.rules.booking.usualTimeLimit"),
-        config.getDuration("app.rules.booking.premiumTimeLimit"),
+        Duration.parse(config.getString("app.rules.booking.minimumTime")),
+        Duration.parse(config.getString("app.rules.booking.usualTimeLimit")),
+        Duration.parse(config.getString("app.rules.booking.premiumTimeLimit")),
         config.getInt("app.rules.booking.streakRequirementForPremium"),
-        config.getDuration("app.rules.booking.timeRequirementForPremium"),
+        Duration.parse(config.getString("app.rules.booking.timeRequirementForPremium")),
         config.getEnum(TimeThreshold.class, "app.rules.booking.timeThresholdMethod"),
-        config.getDuration("app.rules.booking.inFutureAvailability")
+        Duration.parse(config.getString("app.rules.booking.inFutureAvailability"))
     );
 
     Service service = Service.ignite();
