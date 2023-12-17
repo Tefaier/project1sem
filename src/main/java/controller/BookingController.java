@@ -203,7 +203,7 @@ public class BookingController implements Controller {
                   .map(booking -> Map.of("id", "" + booking.id,
                       "timeFrom", booking.timeFrom.format(dateTimeFormatter),
                       "timeTo", booking.timeTo.format(dateTimeFormatter),
-                      "roomId", "" + roomRepository.getRoom(booking.roomId).get().name))
+                      "roomName", "" + roomRepository.getRoom(booking.roomId).get().name))
                   .toList();
           Map<String, Object> model = new HashMap<>();
           model.put("bookings", bookingMapList);
