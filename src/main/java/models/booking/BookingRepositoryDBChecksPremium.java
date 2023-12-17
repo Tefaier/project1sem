@@ -101,9 +101,9 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
   @Override
   public Booking addBooking(BookingDTO bookingDTO) throws ValidationException, OverlapException {
     return jdbi.inTransaction((Handle handle) -> {
-      if (userRepository.getUser(bookingDTO.userID()).isEmpty() ||
-      roomRepository.getRoom(bookingDTO.roomID()).isEmpty()) {
-        throw new ValidationException("Room or user problem", "Room with id: " + bookingDTO.roomID() + " or user with id: " + bookingDTO.userID() + "doesn't exist");
+      if (userRepository.getUser(bookingDTO.userId()).isEmpty() ||
+      roomRepository.getRoom(bookingDTO.roomId()).isEmpty()) {
+        throw new ValidationException("Room or user problem", "Room with id: " + bookingDTO.roomId() + " or user with id: " + bookingDTO.userId() + "doesn't exist");
       }
       validateTime(bookingDTO);
       long overlaps = (long) handle.createQuery("select count(*) as counter " +
@@ -112,8 +112,8 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
           "((time_from between :time_from::timestamptz and :time_to::timestamptz) or " +
           "(time_to between :time_from::timestamptz and :time_to::timestamptz) or " +
           "(time_from <= :time_from::timestamptz and time_to >= :time_to::timestamptz))")
-          .bind("account_id", bookingDTO.userID())
-          .bind("room_id", bookingDTO.roomID())
+          .bind("account_id", bookingDTO.userId())
+          .bind("room_id", bookingDTO.roomId())
           .bind("time_from", Timestamp.valueOf(bookingDTO.from()))
           .bind("time_to", Timestamp.valueOf(bookingDTO.to()))
           .mapToMap()
@@ -124,13 +124,13 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
       }
       var result = handle.createUpdate("INSERT INTO booking(account_id, room_id, time_from, time_to) " +
               "VALUES (:account_id, :room_id, :time_from::timestamptz, :time_to::timestamptz);")
-          .bind("account_id", bookingDTO.userID())
-          .bind("room_id", bookingDTO.roomID())
+          .bind("account_id", bookingDTO.userId())
+          .bind("room_id", bookingDTO.roomId())
           .bind("time_from", Timestamp.valueOf(bookingDTO.from()))
           .bind("time_to", Timestamp.valueOf(bookingDTO.to()))
           .executeAndReturnGeneratedKeys("booking_id").mapToMap().findFirst();
       long generatedID = (long) result.get().get("booking_id");
-      return new Booking(generatedID, bookingDTO.from(), bookingDTO.to(), bookingDTO.userID(), bookingDTO.roomID());
+      return new Booking(generatedID, bookingDTO.from(), bookingDTO.to(), bookingDTO.userId(), bookingDTO.roomId());
     });
   }
 
@@ -198,7 +198,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
   }
 
   private void validateRoomLimit (BookingDTO bookingDTO) throws ValidationException {
-    Room room = roomRepository.getRoom(bookingDTO.roomID()).get();
+    Room room = roomRepository.getRoom(bookingDTO.roomId()).get();
     if (!room.isOpenAtPeriod(bookingDTO.from(), bookingDTO.to())) {
       throw new ValidationException("Room limit doesn't allow this booking", "Room " + room.name + " is open from: " + room.availableFrom + " up to: " + room.availableTo);
     }
@@ -206,7 +206,7 @@ public class BookingRepositoryDBChecksPremium implements BookingRepository {
 
   private void validateTimeLimit (BookingDTO bookingDTO) throws ValidationException {
     LocalDateTime periodStart = timeThresholdMethod.periodStartFunc.apply(bookingDTO.from());
-    User user = userRepository.getUser(bookingDTO.userID()).get();
+    User user = userRepository.getUser(bookingDTO.userId()).get();
     boolean passedPremiumCheck = passedPremiumCheck(bookingDTO, user);
     Duration currentBookedDuration = user.getTotalBookTime(
         periodStart,

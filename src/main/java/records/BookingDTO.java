@@ -3,7 +3,7 @@ package records;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public record BookingDTO(LocalDateTime from, LocalDateTime to, long userID, long roomID) {
+public record BookingDTO(LocalDateTime from, LocalDateTime to, long userId, long roomId) {
   public BookingDTO {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);

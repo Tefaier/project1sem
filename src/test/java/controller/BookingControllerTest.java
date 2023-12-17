@@ -23,9 +23,7 @@ import records.BookingDTO;
 import records.RoomDTO;
 import records.UserDTO;
 import spark.Service;
-import spark.template.freemarker.FreeMarkerEngine;
 
-import java.awt.print.Book;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -34,10 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 class BookingControllerTest {
@@ -119,7 +113,7 @@ class BookingControllerTest {
         HttpRequest
             .newBuilder()
             .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(bookingDTO)))
-            .uri(URI.create("http://localhost:%d/room/%d/book".formatted(service.port(), bookingDTO.roomID())))
+            .uri(URI.create("http://localhost:%d/room/%d/book".formatted(service.port(), bookingDTO.roomId())))
             .build(),
         HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
   }
