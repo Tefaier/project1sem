@@ -61,6 +61,7 @@ public class Main {
     );
 
     Service service = Service.ignite();
+    service.staticFileLocation("/web");
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule());
     Controller controller = new BookingController(

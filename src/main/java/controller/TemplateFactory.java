@@ -8,7 +8,7 @@ public class TemplateFactory {
   public static FreeMarkerEngine freeMarkerEngine() {
     Configuration freeMarkerConfiguration = new Configuration(Configuration.VERSION_2_3_0);
     FreeMarkerEngine freeMarkerEngine = new FreeMarkerEngine(freeMarkerConfiguration);
-    freeMarkerConfiguration.setTemplateLoader(new ClassTemplateLoader(TemplateFactory.class, "/"));
+    freeMarkerConfiguration.setTemplateLoader(new ClassTemplateLoader(TemplateFactory.class, "/web/"));
     return freeMarkerEngine;
   }
 }
