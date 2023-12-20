@@ -113,7 +113,7 @@ class BookingControllerTest {
         HttpRequest
             .newBuilder()
             .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(bookingDTO)))
-            .uri(URI.create("http://localhost:%d/room/%d/book".formatted(service.port(), bookingDTO.roomId())))
+            .uri(URI.create("http://localhost:%d/room/book".formatted(service.port())))
             .build(),
         HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
   }
@@ -143,7 +143,7 @@ class BookingControllerTest {
         HttpRequest
             .newBuilder()
             .GET()
-            .uri(URI.create("http://localhost:%d/user/%d".formatted(service.port(), id)))
+            .uri(URI.create("http://localhost:%d/user/%d/list".formatted(service.port(), id)))
             .build(),
         HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
   }
