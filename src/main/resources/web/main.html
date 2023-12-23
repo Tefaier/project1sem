@@ -10,6 +10,10 @@
             let value = document.querySelector(".roomIdInput").value;
             window.location = "/room/" + value + "/update";
         }
+        function goToUser(){
+            let value = document.querySelector(".userIdInput").value;
+            window.location = "/user/" + value + "/list";
+        }
     </script>
 </head>
 <body>
@@ -18,6 +22,9 @@
 <label>Id комнаты для изменения</label>
 <input class="roomIdInput" type="number" step="1" min="1">
 <button onclick="goToRoom()">Изменить комнату</button><br>
-<a href="/room/book"><button>Создать Бронь</button></a>
+<a href="/room/book"><button>Создать Бронь</button></a><br>
+<label>Id пользователя</label>
+<input class="userIdInput" type="number" step="1" min="1">
+<button onclick="goToUser()">Посмотреть список броней</button>
 </body>
 </html>
