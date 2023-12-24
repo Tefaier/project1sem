@@ -19,6 +19,9 @@ import spark.Response;
 import spark.Service;
 import spark.template.freemarker.FreeMarkerEngine;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -249,10 +252,13 @@ public class BookingController implements Controller {
             return "Cannot find a user with ID " + userId;
           }
           List<Booking> bookings = bookingRepository.getBookingsByUser(userId, null, null);
+          DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT);
           List<Map<String, String>> bookingMapList =
-              bookings.stream()
-                  .map(booking -> Map.of("id", "" + booking.id, "timeFrom", booking.timeFrom.toString(),
-                      "timeTo", booking.timeTo.toString(), "roomId", "" + booking.roomId))
+              bookings.stream().filter(booking -> booking.timeFrom.isBefore(LocalDateTime.now()))
+                  .map(booking -> Map.of("id", "" + booking.id,
+                      "timeFrom", booking.timeFrom.format(dateTimeFormatter),
+                      "timeTo", booking.timeTo.format(dateTimeFormatter),
+                      "roomName", "" + roomRepository.getRoom(booking.roomId).get().name))
                   .toList();
           Map<String, Object> model = new HashMap<>();
           model.put("bookings", bookingMapList);
