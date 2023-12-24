@@ -251,10 +251,10 @@ public class BookingController implements Controller {
             response.status(400);
             return "Cannot find a user with ID " + userId;
           }
-          List<Booking> bookings = bookingRepository.getBookingsByUser(userId, null, null);
+          List<Booking> bookings = bookingRepository.getBookingsByUser(userId, LocalDateTime.now(), null);
           DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT);
           List<Map<String, String>> bookingMapList =
-              bookings.stream().filter(booking -> booking.timeFrom.isBefore(LocalDateTime.now()))
+              bookings.stream()
                   .map(booking -> Map.of("id", "" + booking.id,
                       "timeFrom", booking.timeFrom.format(dateTimeFormatter),
                       "timeTo", booking.timeTo.format(dateTimeFormatter),
