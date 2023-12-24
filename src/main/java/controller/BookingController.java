@@ -19,6 +19,7 @@ import spark.Response;
 import spark.Service;
 import spark.template.freemarker.FreeMarkerEngine;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.HashMap;
@@ -253,7 +254,7 @@ public class BookingController implements Controller {
           List<Booking> bookings = bookingRepository.getBookingsByUser(userId, null, null);
           DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT);
           List<Map<String, String>> bookingMapList =
-              bookings.stream()
+              bookings.stream().filter(booking -> booking.timeFrom.isBefore(LocalDateTime.now()))
                   .map(booking -> Map.of("id", "" + booking.id,
                       "timeFrom", booking.timeFrom.format(dateTimeFormatter),
                       "timeTo", booking.timeTo.format(dateTimeFormatter),
