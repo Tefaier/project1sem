@@ -14,14 +14,14 @@
     <th>ID брони</th>
     <th>Время начала</th>
     <th>Время конца</th>
-    <th>ID аудитории</th>
+    <th>Аудитория</th>
   </tr>
     <#list bookings as booking>
       <tr>
         <td>${booking.id}</td>
         <td>${booking.timeFrom}</td>
         <td>${booking.timeTo}</td>
-        <td>${booking.roomId}</td>
+        <td>${booking.roomName}</td>
       </tr>
     </#list>
 </table>
