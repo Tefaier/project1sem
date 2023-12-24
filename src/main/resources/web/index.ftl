@@ -7,7 +7,7 @@
   <script>
           function deleteBooking(value){
               window.location = "/room/unbook/" + value;
-              location.reload();
+              window.location.reload();
           }
   </script>
 </head>
