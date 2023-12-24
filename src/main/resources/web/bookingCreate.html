@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Бронирование</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/yegor256/tacit@gh-pages/tacit-css-1.6.0.min.css"/>
+    <script>
+        async function register(){
+              let userId = document.querySelector(".userId").value;
+              let roomId = document.querySelector(".roomId").value;
+              let from = document.querySelector(".from").value;
+              let to = document.querySelector(".to").value;
+
+              const jsonData = {
+                userId: userId,
+                roomId: roomId,
+                from: from,
+                to: to
+              }
+
+              let responseField = document.querySelector(".response");
+
+              const response = await fetch(window.location.href, {
+                method: "POST",
+                body: JSON.stringify(jsonData),
+                headers: {
+                'Content-type': 'application/json; charset=UTF-8'
+                }
+              });
+              responseField.innerHTML = await response.text();
+              responseField.style.visibility = "visible";
+        }
+    </script>
+</head>
+<body>
+
+<h1>Бронирование</h1><br>
+<label>Id пользователя</label>
+<input class="userId" type="number" step="1" min="1"><br>
+<label>Id комнаты</label>
+<input class="roomId" type="number" step="1" min="1"><br>
+<label>С </label>
+<input class="from" type="datetime-local"><br>
+<label>По </label>
+<input class="to" type="datetime-local"><br>
+<button onclick="register()">Создать</button><br>
+<p class="response" style="visibility: hidden"></p>
+
+</body>
+</html>

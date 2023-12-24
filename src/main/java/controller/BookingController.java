@@ -19,12 +19,13 @@ import spark.Response;
 import spark.Service;
 import spark.template.freemarker.FreeMarkerEngine;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static models.booking.Booking.parseMap;
 
 public class BookingController implements Controller {
   private static final Logger LOG = LoggerFactory.getLogger(BookingController.class);
@@ -47,6 +48,7 @@ public class BookingController implements Controller {
     this.bookingRepository = bookingRepository;
     this.objectMapper = objectMapper;
     this.freeMarkerEngine = freeMarkerEngine;
+    mainPage();
     createUser();
     createRoom();
     updateRoom();
@@ -62,7 +64,25 @@ public class BookingController implements Controller {
     LOG.debug("Booking controller started");
   }
 
+  private void mainPage() {
+    service.get(
+        "main",
+        (Request request, Response response) -> {
+          response.type("text/html");
+          return freeMarkerEngine.render(new ModelAndView(new HashMap<>(), "main.html"));
+        }
+    );
+  }
+
   private void createUser() {
+    service.get(
+        "user/create",
+        (Request request, Response response) -> {
+          response.type("text/html");
+          return freeMarkerEngine.render(new ModelAndView(new HashMap<>(), "userCreate.html"));
+        }
+    );
+
     service.post(
         "user/create",
         (Request request, Response response) -> {
@@ -84,6 +104,14 @@ public class BookingController implements Controller {
   }
 
   private void createRoom() {
+    service.get(
+        "room/create",
+        (Request request, Response response) -> {
+          response.type("text/html");
+          return freeMarkerEngine.render(new ModelAndView(new HashMap<>(), "roomCreate.html"));
+        }
+    );
+
     service.post(
         "room/create",
         (Request request, Response response) -> {
@@ -105,6 +133,25 @@ public class BookingController implements Controller {
   }
 
   private void updateRoom() {
+    service.get(
+        "room/:roomId/update",
+        (Request request, Response response) -> {
+          long roomId = Long.parseLong(request.params("roomId"));
+          Optional<Room> room = roomRepository.getRoom(roomId);
+          if (room.isEmpty()) {
+            LOG.debug("Cannot find a room with ID " + roomId);
+            response.status(400);
+            return "Cannot find a room with ID " + roomId;
+          }
+          Map<String, Object> model = new HashMap<>();
+          model.put("roomName", room.get().name);
+          model.put("timeFrom", room.get().availableFrom);
+          model.put("timeTo", room.get().availableTo);
+          model.put("noCheck", room.get().noCheck);
+          return freeMarkerEngine.render(new ModelAndView(model, "roomUpdate.ftl"));
+        }
+    );
+
     service.put(
         "room/:roomId/update",
         (Request request, Response response) -> {
@@ -135,8 +182,16 @@ public class BookingController implements Controller {
   }
 
   private void book() {
+    service.get(
+        "room/book",
+        (Request request, Response response) -> {
+          response.type("text/html");
+          return freeMarkerEngine.render(new ModelAndView(new HashMap<>(), "bookingCreate.html"));
+        }
+    );
+
     service.post(
-        "room/:roomId/book",
+        "room/book",
         (Request request, Response response) -> {
           LOG.debug("Trying to book the room");
 
@@ -184,7 +239,7 @@ public class BookingController implements Controller {
 
   private void getUserBookingList() {
     service.get(
-        "user/:userId",
+        "user/:userId/list",
         (Request request, Response response) -> {
           LOG.debug("Trying to get the booking list");
 
@@ -196,11 +251,14 @@ public class BookingController implements Controller {
             response.status(400);
             return "Cannot find a user with ID " + userId;
           }
-          List<Booking> bookings = bookingRepository.getBookingsByUser(userId, null, null);
+          List<Booking> bookings = bookingRepository.getBookingsByUser(userId, LocalDateTime.now(), null);
+          DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT);
           List<Map<String, String>> bookingMapList =
               bookings.stream()
-                  .map(booking -> Map.of("id", "" + booking.id, "timeFrom", booking.timeFrom.toString(),
-                      "timeTo", booking.timeTo.toString(), "roomId", "" + booking.roomId))
+                  .map(booking -> Map.of("id", "" + booking.id,
+                      "timeFrom", booking.timeFrom.format(dateTimeFormatter),
+                      "timeTo", booking.timeTo.format(dateTimeFormatter),
+                      "roomName", "" + roomRepository.getRoom(booking.roomId).get().name))
                   .toList();
           Map<String, Object> model = new HashMap<>();
           model.put("bookings", bookingMapList);
