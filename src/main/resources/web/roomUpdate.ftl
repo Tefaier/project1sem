@@ -21,7 +21,7 @@
               let responseField = document.querySelector(".response");
 
               const response = await fetch(window.location.href, {
-                method: "POST",
+                method: "PUT",
                 body: JSON.stringify(jsonData),
                 headers: {
                 'Content-type': 'application/json; charset=UTF-8'

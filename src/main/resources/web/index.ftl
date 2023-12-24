@@ -5,8 +5,10 @@
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/gh/yegor256/tacit@gh-pages/tacit-css-1.6.0.min.css"/>
   <script>
-          function deleteBooking(value){
-              window.location = "/room/unbook/" + value;
+          async function deleteBooking(value){
+              const response = await fetch("/room/unbook/" + value, {
+              method: "DELETE"
+              });
               window.location.reload();
           }
   </script>
@@ -27,7 +29,7 @@
         <td>${booking.timeFrom}</td>
         <td>${booking.timeTo}</td>
         <td>${booking.roomName}</td>
-        <button onclick="deleteBooking(${booking.Id})">Удалить</button>
+        <td><button onclick="deleteBooking(${booking.id})">Удалить</button></td>
       </tr>
     </#list>
 </table>
